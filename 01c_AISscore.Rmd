@@ -1,0 +1,91 @@
+---
+title: "01c_AISscores"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(readr)
+library(icdpicr)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+
+```{r}
+pcrkey_icdcodes_combined <- read_csv("/Volumes/Research/GoldenHourData/InclusionCriteria/TESTfiltered_pcrkey_icdcodes_combined.csv")
+
+```
+
+```{r}
+pcrkey_icdcodes_combined
+
+```
+```{r}
+#testrun
+
+test_df <- 	pcrkey_icdcodes_combined[1:20, ]
+testscores <- cat_trauma(test_df, "dx", icd10 = TRUE, "roc_max_TQIP")
+testscores
+
+```
+
+
+```{r}
+#Run icdpicr
+#is NEMSIS data more similar to TQIP or NIS? 
+
+cat_trauma_output <- cat_trauma(pcrkey_icdcodes_combined, "dx", icd10 = TRUE, "roc_max_TQIP")
+
+cat_trauma_output
+```
+
+```{r}
+#How many patients within NISS score bins
+
+#defining counting function
+count_niss_bins <- function(data) {
+  data$bin <- cut(data$niss,
+                  breaks = c(-Inf, 0, 9, 16, 25, Inf),
+                  labels = c("Ignore", "mild", "moderate", "severe", "profound"),
+                  right = FALSE)
+  
+  bin_counts <- data %>%
+    group_by(bin) %>%
+    summarise(count = n(), .groups = 'drop')
+  
+  return(bin_counts)
+}
+
+```
+
+
+```{r}
+NISS_bins <- count_niss_bins(cat_trauma_output)
+
+NISS_bins
+```
+
+```{r}
+#filter out entries with no NISS score
+library(dplyr)
+filtered_cat_trauma_output <- cat_trauma_output %>%
+  filter(niss >15)
+
+filtered_cat_trauma_output
+
+```
+
+
+
+
+```{r}
+write_csv(filtered_cat_trauma_output, "/Volumes/Research/GoldenHourData/InclusionCriteria/FILTEREDTEST_cat_trauma_output.csv")
+```
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
